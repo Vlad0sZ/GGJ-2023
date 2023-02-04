@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -7,31 +8,39 @@ namespace Main
     public class PlayerController : MonoBehaviour
     {
         [SerializeField] private Animator animator;
-        [SerializeField] private float speed;
         [SerializeField] private Transform characterTransform;
-        [SerializeField] private float rayDistance;
         [SerializeField] private float interactDistance;
-        [SerializeField] public float jumpAmount = 35;
-        [SerializeField] public float gravityScale = 10;
-        [SerializeField] public float fallingGravityScale = 40;
-    
+        [SerializeField] private Player player;
+        [SerializeField] private Swinging swinging;
+
         private InputActions _inputActions;
         private static readonly int IsMoving = Animator.StringToHash("IsMoving");
-        private Rigidbody2D _rigidbody;
-        private float _inputDirection;
-        private bool _isGround;
+        private Vector2 _inputDirection;
         private bool _isJump;
+        private bool _isSwing;
+        private IRope _lastRope;
 
         private void Awake()
         {
-            _rigidbody = GetComponent<Rigidbody2D>();
-        
             _inputActions = new InputActions();
             _inputActions.Enable();
             _inputActions.Player.Movement.performed += OnMovement;
             _inputActions.Player.Movement.canceled += OnMovementCanceled;
             _inputActions.Player.Jump.performed += OnJumpPerformed;
+            _inputActions.Player.Jump.canceled += OnJumpCanceled;
             _inputActions.Player.Interact.performed += OnInteractPerformed;
+            
+            player.OnLandEvent.AddListener(OnGrounded);
+        }
+
+        private void OnGrounded()
+        {
+            _lastRope = null;
+        }
+
+        private void OnJumpCanceled(InputAction.CallbackContext obj)
+        {
+            _isJump = false;
         }
 
         private void OnInteractPerformed(InputAction.CallbackContext obj)
@@ -54,55 +63,53 @@ namespace Main
             Stop();
         }
 
-        private void FixedUpdate()
+        private void Update()
         {
-            var hit = Physics2D.Raycast(_rigidbody.position, Vector2.down, rayDistance,
-                LayerMask.GetMask("Ground"));
-            _isGround = hit.collider != null;
-            
-            if (_isJump)
-            {
-                _rigidbody.velocity = new Vector2(_rigidbody.velocity.x, jumpAmount);
-                _isJump = false;
-            }
-
-            _rigidbody.gravityScale = _rigidbody.velocity.y switch
-            {
-                >= 0 => gravityScale,
-                < 0 => fallingGravityScale,
-                _ => _rigidbody.gravityScale
-            };
-
-            _rigidbody.velocity = new Vector2(_inputDirection * speed * Time.fixedDeltaTime, _rigidbody.velocity.y);
+            player.Move(_inputDirection.x, false, _isJump);
         }
 
         private void OnMovement(InputAction.CallbackContext context)
         {
-            var value = context.ReadValue<float>();
+            var value = context.ReadValue<Vector2>();
             MoveToDirection(value);
+            swinging.Climb(value);
         }
     
-        private void MoveToDirection(float direction)
+        private void MoveToDirection(Vector2 direction)
         {
             animator.SetBool(IsMoving, true);
-            
-            var scale = characterTransform.localScale;
-            scale.x = direction < 0 ? -1 : 1;
-            characterTransform.localScale = scale;
 
             _inputDirection = direction;
         }
-    
+
+        private void OnTriggerEnter2D(Collider2D col)
+        {
+            if (col.TryGetComponent(out IRope rope))
+            {
+                if(rope == _lastRope)
+                    return;
+                
+                swinging.Attach(rope);
+                _isSwing = true;
+                _lastRope = rope;
+            }
+        }
+
         private void Stop()
         {
             animator.SetBool(IsMoving, false);
-            _inputDirection = 0;
+            _inputDirection.x = 0;
         }
 
         private void Jump()
         {
-            if(_isGround)
-                _isJump = true;
+            _isJump = true;
+
+            if (_isSwing)
+            {
+                swinging.Detach();
+                _isSwing = false;
+            }
         }
     }
 }
