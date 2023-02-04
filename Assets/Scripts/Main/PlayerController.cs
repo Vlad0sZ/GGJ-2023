@@ -60,6 +60,7 @@ namespace Main
 
         private void OnMovementCanceled(InputAction.CallbackContext obj)
         {
+            swinging.StopClimb();
             Stop();
         }
 
@@ -71,8 +72,13 @@ namespace Main
         private void OnMovement(InputAction.CallbackContext context)
         {
             var value = context.ReadValue<Vector2>();
-            MoveToDirection(value);
-            swinging.Climb(value);
+            
+            
+            if(_isSwing)
+                swinging.Climb(value);
+            else
+                MoveToDirection(value);
+            
         }
     
         private void MoveToDirection(Vector2 direction)
@@ -90,6 +96,7 @@ namespace Main
                     return;
                 
                 swinging.Attach(rope);
+                Stop();
                 _isSwing = true;
                 _lastRope = rope;
             }
