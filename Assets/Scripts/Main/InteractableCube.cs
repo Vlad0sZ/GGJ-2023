@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 
-namespace DefaultNamespace
+namespace Main
 {
     public class InteractableCube : MonoBehaviour, IInteractable
     {
