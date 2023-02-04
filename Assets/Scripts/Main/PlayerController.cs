@@ -12,6 +12,7 @@ namespace Main
         [SerializeField] private float interactDistance;
         [SerializeField] private Player player;
         [SerializeField] private Swinging swinging;
+        [SerializeField] private bool enableAutoRun;
 
         private InputActions _inputActions;
         private static readonly int IsMoving = Animator.StringToHash("IsMoving");
@@ -29,8 +30,17 @@ namespace Main
             _inputActions.Player.Jump.performed += OnJumpPerformed;
             _inputActions.Player.Jump.canceled += OnJumpCanceled;
             _inputActions.Player.Interact.performed += OnInteractPerformed;
-            
+
             player.OnLandEvent.AddListener(OnGrounded);
+        }
+
+        private void Start()
+        {
+            if(enableAutoRun)
+            {
+                animator.SetBool(IsMoving, true);
+                _inputDirection = Vector2.right;
+            }
         }
 
         private void OnGrounded()
@@ -72,8 +82,7 @@ namespace Main
         private void OnMovement(InputAction.CallbackContext context)
         {
             var value = context.ReadValue<Vector2>();
-            
-            
+
             if(_isSwing)
                 swinging.Climb(value);
             else
@@ -83,6 +92,7 @@ namespace Main
     
         private void MoveToDirection(Vector2 direction)
         {
+            if(enableAutoRun) return;
             animator.SetBool(IsMoving, true);
 
             _inputDirection = direction;
@@ -100,12 +110,37 @@ namespace Main
                 _isSwing = true;
                 _lastRope = rope;
             }
+
+            if (col.CompareTag("Crowling"))
+            {
+                EnableCrowling();
+            }
+        }
+
+        private void OnTriggerExit(Collider other)
+        {
+            if (other.CompareTag("Crowling"))
+            {
+                DisableCrowling();
+            }
         }
 
         private void Stop()
         {
+            if(enableAutoRun) return;
+            
             animator.SetBool(IsMoving, false);
             _inputDirection.x = 0;
+        }
+
+        private void EnableCrowling()
+        {
+            transform.rotation = Quaternion.Euler(0, 0, -90);
+        }
+
+        private void DisableCrowling()
+        {
+            transform.rotation = Quaternion.identity;
         }
 
         private void Jump()
