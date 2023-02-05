@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using Cinemachine;
 using UnityEngine;
@@ -8,68 +9,68 @@ namespace Effects
     public class GhostTeleport : PlayerTrigger
     {
         [SerializeField] private Transform targetPosition;
-        [SerializeField] private ParticleSystem ghostParticles;
-        [SerializeField] private float speed;
+        [SerializeField] private GhostDash ghostDash;
+        [SerializeField] private float preDashWaiting = 0.1f;
+        [SerializeField] private float postDashWaiting = 0.2f;
 
         [SerializeField] private CinemachineVirtualCamera vCamera;
         
         private Coroutine _ghostRoutine;
         private GameObject _player;
-        private ParticleSystem _ghostParticle;
-
+        private GhostDash _ghostDash;
+        
         protected override void PlayerTriggered(GameObject player)
         {
             if (targetPosition == null) return;
 
             _player = player;
-            if (_ghostRoutine != null) StopCoroutine(_ghostRoutine);
-            _ghostRoutine = StartCoroutine(TeleportPlayerToTarget());
+            _ghostDash = Instantiate(ghostDash, transform);
+            _ghostDash.CreateDash(player.transform.position, targetPosition.position, DashesRoutines, true);
         }
 
 
-        private IEnumerator TeleportPlayerToTarget()
+        
+        private IEnumerator DashesRoutines(GhostDash.DashState state)
         {
-            if (_player == null) yield break;
-
-            _player.SetActive(false);
-
-            if (_ghostParticle == null)
-                _ghostParticle = Instantiate(ghostParticles, transform);
-
-            _ghostParticle.transform.position = _player.transform.position;
-            _ghostParticle.gameObject.SetActive(true);
-            _ghostParticle.Play(true);
-            if (vCamera)
+            switch (state)
             {
-                vCamera.gameObject.SetActive(true);
-                vCamera.Follow = _ghostParticle.transform;
+                case GhostDash.DashState.Prepare:
+                    _player.gameObject.SetActive(false);
+                    break;
+                
+                case GhostDash.DashState.PreDash:
+                    yield return null;
+                    yield return new WaitForSeconds(preDashWaiting);
+                    break;
+
+                case GhostDash.DashState.Dash:
+                    yield return null;
+                    
+                    if (vCamera)
+                    {
+                        vCamera.gameObject.SetActive(true);
+                        vCamera.Follow = targetPosition;
+                    }
+
+                    yield return new WaitForSeconds(postDashWaiting);
+                    
+                    break;
+                
+                
+                case GhostDash.DashState.PostDash:
+                    yield return null;
+                    
+                    _player.transform.position = targetPosition.position;
+                    if (vCamera)
+                        vCamera.gameObject.SetActive(false);
+                    _player.SetActive(true);
+                    yield return null;
+
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(state), state, null);
             }
-
-            yield return null;
-
-            Transform ghostTransform = _ghostParticle.transform;
-            Vector3 target = targetPosition.position;
-            Vector3 position = ghostTransform.position;
-            float t = 0f;
-
-            while (t <= 1f)
-            {
-                t += Time.deltaTime * speed;
-                ghostTransform.position = Vector3.Slerp(position, target, t);
-                yield return null;
-            }
-
-            _player.transform.position = target;
-
-            if (vCamera)
-                vCamera.gameObject.SetActive(false);
-
-
-            _ghostParticle.Stop();
-            _player.SetActive(true);
-            _ghostParticle.gameObject.SetActive(false);
         }
-
 
         private void OnDrawGizmos()
         {

@@ -12,7 +12,6 @@ namespace Effects
 
         [SerializeField] private PlayerTriggerEvent onPlayerTriggered;
 
-
         protected override void PlayerTriggered(GameObject player)
         {
             onPlayerTriggered?.Invoke();
