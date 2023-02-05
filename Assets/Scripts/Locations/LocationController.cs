@@ -14,6 +14,17 @@ namespace Locations
         [SerializeField] private string nextLevel;
 
         private bool isFinishPlayed;
+
+        private void Update()
+        {
+            if (Input.GetKey(KeyCode.R))
+            {
+                isFinishPlayed = true;
+                FinalizeLocation();
+            }
+            
+            if(Input.GetKey(KeyCode.T)) ReloadLocation();
+        }
         
         private void OnEnable()
         {

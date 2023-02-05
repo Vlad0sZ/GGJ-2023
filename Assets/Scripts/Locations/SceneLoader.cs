@@ -12,6 +12,7 @@ namespace Locations
         [SerializeField] private AudioSource audioSource;
         [SerializeField] private AudioClip loadingClip;
 
+        
         private void Awake()
         {
             if (Instance != null)
@@ -22,6 +23,19 @@ namespace Locations
 
             Instance = this;
             DontDestroyOnLoad(gameObject);
+            SceneManager.sceneLoaded += OnSceneLoaded;
+        }
+
+        private void OnSceneLoaded(Scene arg0, LoadSceneMode arg1)
+        {
+            SceneManager.sceneLoaded -= OnSceneLoaded;
+
+            if (audioSource == null || loadingClip == null) return;
+            
+            if(audioSource.isPlaying) return;
+            
+            audioSource.clip = loadingClip;
+            audioSource.Play();
         }
 
 
