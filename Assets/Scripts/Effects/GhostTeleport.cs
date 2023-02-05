@@ -1,13 +1,11 @@
-using System;
 using System.Collections;
 using Cinemachine;
-using Unity.VisualScripting;
 using UnityEngine;
 
 namespace Effects
 {
     [RequireComponent(typeof(Collider2D))]
-    public class GhostTeleport : MonoBehaviour
+    public class GhostTeleport : PlayerTrigger
     {
         [SerializeField] private Transform targetPosition;
         [SerializeField] private ParticleSystem ghostParticles;
@@ -19,10 +17,11 @@ namespace Effects
         private GameObject _player;
         private ParticleSystem _ghostParticle;
 
-        private void OnTriggerEnter2D(Collider2D col)
+        protected override void PlayerTriggered(GameObject player)
         {
-            if (!col.CompareTag("Player")) return;
-            _player = col.gameObject;
+            if (targetPosition == null) return;
+
+            _player = player;
             if (_ghostRoutine != null) StopCoroutine(_ghostRoutine);
             _ghostRoutine = StartCoroutine(TeleportPlayerToTarget());
         }
@@ -61,22 +60,21 @@ namespace Effects
             }
 
             _player.transform.position = target;
-            
-            if (vCamera) 
+
+            if (vCamera)
                 vCamera.gameObject.SetActive(false);
 
 
             _ghostParticle.Stop();
             _player.SetActive(true);
             _ghostParticle.gameObject.SetActive(false);
-
         }
 
 
         private void OnDrawGizmos()
         {
-            if(targetPosition == null) return;
-            
+            if (targetPosition == null) return;
+
             var pos = transform.position;
             var t = targetPosition.position;
             Gizmos.DrawLine(pos, t);

@@ -34,6 +34,16 @@ namespace Main
             player.OnLandEvent.AddListener(OnGrounded);
         }
 
+        private void OnDestroy()
+        {
+            _inputActions.Player.Movement.performed -= OnMovement;
+            _inputActions.Player.Movement.canceled -= OnMovementCanceled;
+            _inputActions.Player.Jump.performed -= OnJumpPerformed;
+            _inputActions.Player.Jump.canceled -= OnJumpCanceled;
+            _inputActions.Player.Interact.performed -= OnInteractPerformed;
+            _inputActions.Disable();
+        }
+
         private void Start()
         {
             if(enableAutoRun)
