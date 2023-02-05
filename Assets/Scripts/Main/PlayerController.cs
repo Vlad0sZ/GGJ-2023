@@ -13,6 +13,7 @@ namespace Main
         [SerializeField] private Player player;
         [SerializeField] private Swinging swinging;
         [SerializeField] private bool enableAutoRun;
+        [SerializeField] private bool enableCrowling;
 
         private InputActions _inputActions;
         private static readonly int IsMoving = Animator.StringToHash("IsMoving");
@@ -105,6 +106,15 @@ namespace Main
             if(enableAutoRun) return;
             animator.SetBool(IsMoving, true);
 
+            if (enableCrowling)
+            {
+                
+                if(direction.y < 0)
+                    player.EnableCrowling();
+                else if(direction.y > 0)
+                    player.DisableCrowling();
+            }
+            
             _inputDirection = direction;
         }
 
@@ -121,17 +131,17 @@ namespace Main
                 _lastRope = rope;
             }
 
-            if (col.CompareTag("Crowling"))
+            if (col.CompareTag("Crowling") && enableCrowling)
             {
-                EnableCrowling();
+                player.EnableCrowling();
             }
         }
 
         private void OnTriggerExit(Collider other)
         {
-            if (other.CompareTag("Crowling"))
+            if (other.CompareTag("Crowling") && enableCrowling)
             {
-                DisableCrowling();
+                player.DisableCrowling();
             }
         }
 
@@ -143,16 +153,7 @@ namespace Main
             _inputDirection.x = 0;
         }
 
-        private void EnableCrowling()
-        {
-            transform.rotation = Quaternion.Euler(0, 0, -90);
-        }
-
-        private void DisableCrowling()
-        {
-            transform.rotation = Quaternion.identity;
-        }
-
+        
         private void Jump()
         {
             _isJump = true;
