@@ -14,11 +14,18 @@ namespace Locations
         [SerializeField] private string nextLevel;
 
         private bool isFinishPlayed;
-
+        
         private void OnEnable()
         {
-            if (finishDirector == null) return;
-            finishDirector.played += director => { isFinishPlayed = true; };
+            if (finishDirector == null)
+            {
+                isFinishPlayed = true;
+                return;
+            }
+            
+            
+            if (finishDirector.playOnAwake) isFinishPlayed = true;
+            else finishDirector.played += director => { isFinishPlayed = true; };
             finishDirector.stopped += director => { FinalizeLocation(); };
         }
 
@@ -26,7 +33,7 @@ namespace Locations
         public void ReloadLocation()
         {
             isFinishPlayed = false;
-
+            Debug.Log("Reload location");
             if (stoppedDirectors.Length == 0 && reloadTriggers.Length == 0)
             {
                 SceneLoader.Instance.Reload();
@@ -35,8 +42,8 @@ namespace Locations
 
             foreach (var playableDirector in stoppedDirectors)
             {
+                Debug.Log($"stop {playableDirector}");
                 playableDirector.Stop();
-                playableDirector.time = 0f;
                 playableDirector.DeferredEvaluate();
             }
 
@@ -49,8 +56,8 @@ namespace Locations
         public void FinalizeLocation()
         {
             if (!isFinishPlayed) return;
-
-            Debug.Log("finish locations");
+            
+            Debug.Log($"finish locations. Next is = {nextLevel}");
             SceneLoader.Instance.LoadScene(nextLevel);
         }
     }

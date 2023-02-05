@@ -12,10 +12,17 @@ namespace Effects
         private Collider2D _collider;
         private float _lastTime;
 
+        private void Awake()
+        {
+            _lastTime = Time.time;
+        }
+
         private void OnTriggerEnter2D(Collider2D col)
         {
+            Debug.Log($"triggered {col}");
             if (!col.CompareTag("Player")) return;
-            if (Time.time - _lastTime < cooldown) return;
+            if (Mathf.Abs(Time.time - _lastTime) <= cooldown) return;
+            Debug.Log($"Is Player!");
             _lastTime = Time.time;
             PlayerTriggered(col.gameObject);
         }
