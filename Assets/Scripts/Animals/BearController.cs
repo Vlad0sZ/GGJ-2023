@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using Locations;
 using Main;
@@ -9,11 +10,10 @@ namespace Animals
     public class BearController : MonoBehaviour
     {
         [SerializeField] private string nextSceneName;
-        [SerializeField] private Transform spawnPoint;
-        [SerializeField] private Player player;
         [SerializeField] private List<TriggerObject> arms;
-        [SerializeField] private TriggerObject endLevelObject;
-        
+        [SerializeField] private TriggerObject finishObject;
+        [SerializeField] private Animator playerAnimator;
+        [SerializeField] private PlayerController playerController;
 
         private void Awake()
         {
@@ -22,7 +22,14 @@ namespace Animals
                 arm.PlayerTriggered += PlayerTriggered;
             }
             
-            endLevelObject.PlayerTriggered += FinishLevel;
+            finishObject.PlayerTriggered += StartFinishAnimation;
+        }
+
+        private void StartFinishAnimation()
+        {
+            playerController.Disable();
+            playerAnimator.SetBool("AddLegs", true);
+            StartCoroutine(LoadNewScene());
         }
 
         private void OnDestroy()
@@ -31,18 +38,19 @@ namespace Animals
             {
                 arm.PlayerTriggered -= PlayerTriggered;
             }
-
-            endLevelObject.PlayerTriggered -= FinishLevel;
-        }
-
-        private void FinishLevel()
-        {
-            SceneLoader.Instance.LoadScene(nextSceneName);
+            
         }
 
         private void PlayerTriggered()
         {
             SceneLoader.Instance.Reload();
+        }
+
+        private IEnumerator LoadNewScene()
+        {
+            yield return new WaitForSeconds(5);
+            SceneLoader.Instance.LoadScene(nextSceneName);
+
         }
     }
 }

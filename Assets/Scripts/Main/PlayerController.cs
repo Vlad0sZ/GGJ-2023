@@ -37,6 +37,12 @@ namespace Main
 
         private void OnDestroy()
         {
+           Disable();
+        }
+
+        public void Disable()
+        {
+            Stop();
             _inputActions.Player.Movement.performed -= OnMovement;
             _inputActions.Player.Movement.canceled -= OnMovementCanceled;
             _inputActions.Player.Jump.performed -= OnJumpPerformed;
