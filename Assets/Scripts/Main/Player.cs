@@ -22,12 +22,18 @@ namespace Main
 		[SerializeField] private Transform m_CeilingCheck; // A position marking where to check for ceilings
 		[SerializeField] private Collider2D m_CrouchDisableCollider; // A collider that will be disabled when crouching
 
-		[SerializeField] float m_GroundedRadius = .2f; // Radius of the overlap circle to determine if grounded
+		[SerializeField] float m_GroundedRadius = .2f;// Radius of the overlap circle to determine if grounded
+		[SerializeField] private float flipRotationY;
+		[SerializeField] private float startRotationY;
+		
+		
+		
 		private bool m_Grounded; // Whether or not the player is grounded.
 		const float k_CeilingRadius = .2f; // Radius of the overlap circle to determine if the player can stand up
 		private Rigidbody2D m_Rigidbody2D;
-		private bool m_FacingRight = true; // For determining which way the player is currently facing.
+		private bool m_FacingRight; // For determining which way the player is currently facing.
 		private Vector3 m_Velocity = Vector3.zero;
+		private bool _isCrowlingEnabled;
 
 		[Header("Events")] [Space] public UnityEvent OnLandEvent;
 
@@ -124,14 +130,16 @@ namespace Main
 					m_MovementSmoothing);
 
 				// If the input is moving the player right and the player is facing left...
-				if (move > 0 && !m_FacingRight)
+				if (move > 0)
 				{
+					m_FacingRight = true;
 					// ... flip the player.
 					Flip();
 				}
 				// Otherwise if the input is moving the player left and the player is facing right...
-				else if (move < 0 && m_FacingRight)
+				else if (move < 0)
 				{
+					m_FacingRight = false;
 					// ... flip the player.
 					Flip();
 				}
@@ -145,16 +153,61 @@ namespace Main
 				m_Rigidbody2D.AddForce(new Vector2(0f, m_JumpForce));
 			}
 		}
+		
+		public void EnableCrowling()
+		{
+			_isCrowlingEnabled = true;
+			
+			transform.rotation = Quaternion.Euler(transform.rotation.x, transform.rotation.y, 
+				transform.localScale.y > 0 ? startRotationY : flipRotationY);
+			Flip();
+		}
 
+		public void DisableCrowling()
+		{
+			_isCrowlingEnabled = false;
+			
+			transform.rotation = Quaternion.identity;
+			var theScale = transform.localScale;
+			theScale.y = 1;
+			transform.localScale = theScale;
+			Flip();
+		}
+		
 
 		private void Flip()
 		{
 			// Switch the way the player is labelled as facing.
-			m_FacingRight = !m_FacingRight;
+			// m_FacingRight = !m_FacingRight;
 
 			// Multiply the player's x local scale by -1.
 			Vector3 theScale = transform.localScale;
-			theScale.x *= -1;
+
+			if (!_isCrowlingEnabled)
+			{
+				theScale.x = m_FacingRight ? 1 : -1;
+				transform.rotation = Quaternion.identity;
+			}
+			else
+			{
+				theScale.x = 1;
+				theScale.y = m_FacingRight ? 1 : -1;
+
+				transform.rotation = Quaternion.Euler(transform.rotation.x, transform.rotation.y, 
+					m_FacingRight ? startRotationY : flipRotationY);
+			}
+			
+			// if(!_isCrowlingEnabled)
+			// {
+			// 	theScale.x *= -1;
+			// }
+			// if(_isCrowlingEnabled)
+			// {
+			// 	theScale.y *= -1;
+			// 	transform.rotation = Quaternion.Euler(transform.rotation.x, transform.rotation.y, 
+			// 		theScale.y > 0 ? startRotationY : flipRotationY);
+			// }
+			
 			transform.localScale = theScale;
 		}
 	}
